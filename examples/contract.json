@@ -1,0 +1,25 @@
+{
+  "name": "catalog-search",
+  "description": "Route state for the product catalog search screen.",
+  "route": "/catalog/:category/search",
+  "params": {
+    "category": { "type": "enum", "values": ["cable", "fasteners", "tools"] }
+  },
+  "query": {
+    "q": { "type": "string", "required": true, "maxLength": 120 },
+    "tag": { "type": "string", "multiplicity": "repeatable", "maxCount": 4, "charset": "slug" },
+    "page": { "type": "integer", "default": "1", "min": 1, "max": 500 },
+    "sort": { "type": "enum", "values": ["newest", "price", "relevance"], "default": "relevance" },
+    "inStock": { "type": "boolean", "default": "false" }
+  },
+  "unknownQueryKeys": "error",
+  "repeatedSingleKeys": "error",
+  "hash": {
+    "mode": "params",
+    "params": {
+      "panel": { "type": "enum", "values": ["compare", "filters"] },
+      "row": { "type": "integer", "min": 0, "max": 9999 }
+    },
+    "unknownKeys": "warn"
+  }
+}

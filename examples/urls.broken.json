@@ -1,0 +1,16 @@
+{
+  "urls": [
+    { "id": "unknown-query-key", "url": "/catalog/tools/search?q=drill&utm_source=news" },
+    { "id": "repeated-single-key", "url": "/catalog/tools/search?q=drill&q=saw" },
+    { "id": "truncated-utf8", "url": "/catalog/tools/search?q=%E0%A4" },
+    { "id": "invalid-escape", "url": "/catalog/tools/search?q=%ZZ" },
+    { "id": "bad-enum", "url": "/catalog/tools/search?q=drill&sort=cheapest" },
+    { "id": "integer-out-of-range", "url": "/catalog/tools/search?q=drill&page=9999" },
+    { "id": "bad-boolean", "url": "/catalog/tools/search?q=drill&inStock=yes" },
+    { "id": "unknown-route-param", "url": "/catalog/adhesives/search?q=drill" },
+    { "id": "missing-required-key", "url": "/catalog/tools/search?page=2" },
+    { "id": "bare-key", "url": "/catalog/tools/search?q=drill&debug" },
+    { "id": "charset-violation", "url": "/catalog/cable/search?q=cat6&tag=Shielded%21" },
+    { "id": "too-many-repeats", "url": "/catalog/cable/search?q=cat6&tag=a&tag=b&tag=c&tag=d&tag=e" }
+  ]
+}
