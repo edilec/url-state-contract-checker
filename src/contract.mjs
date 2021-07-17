@@ -38,14 +38,6 @@ export function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function compare(a, b) {
-  return a < b ? -1 : a > b ? 1 : 0
-}
-
-export function sortedKeys(object) {
-  return Object.keys(object).sort(compare)
-}
-
 // Iterative depth walk. A deeply nested literal never reaches the recursion
 // limit of the engine because this refuses it first.
 export function assertJsonDepth(value, maxDepth, label) {
