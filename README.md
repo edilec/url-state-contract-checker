@@ -76,6 +76,9 @@ fragment mode. Every field is documented in
 The **fixture** is a JSON array of URL strings, or an object with a `urls`
 array whose entries are strings or `{ "id": "...", "url": "..." }` objects.
 URLs may be absolute or root-relative; the origin is preserved and not checked.
+It must hold at least one URL: an empty fixture is reported as `fixture-empty`
+and exits `2`, so a CI job pointed at an empty or wrongly-populated list cannot
+report green having checked nothing.
 
 Both are read from local files. The tool never opens a network connection.
 
@@ -134,7 +137,8 @@ replacement.
 | `2` | invalid usage or contract, unreadable input, or a limit or time budget was exceeded (`status: "incomplete"`) |
 
 Evidence that could not be read is never reported as a pass. An unreadable
-fixture exits `2`, not `0`.
+fixture exits `2`, not `0`, and so does a fixture that holds no URLs: `pass`
+requires that at least one URL was checked and none failed.
 
 ## Limits and non-goals
 
@@ -151,9 +155,12 @@ What this tool **cannot** conclude:
 - **That serialization is byte-preserving.** It is value-preserving and
   canonical. `?q=a+b` re-serializes as `?q=a%20b` and `?page=007` as `?page=7`.
   If you need the original bytes back, keep the original string.
-- **Anything about a URL it refused.** A URL past a declared limit, or a
-  fixture it could not read, makes the whole report `incomplete`. That is the
-  honest answer, not a partial pass.
+- **Anything about a URL it refused.** A URL past a declared limit, a fixture
+  it could not read, and a fixture with nothing in it all make the whole report
+  `incomplete`. That is the honest answer, not a partial pass.
+- **That your fixture covers your application.** It checks the URLs you give
+  it. A fixture that omits the link which actually breaks will still pass, so
+  `summary.checked` is the number to watch in CI.
 - **Fragment semantics.** `hash.mode: "opaque"` checks length and encoding
   only; it has no opinion about what the fragment means.
 - **Encoding variants it does not implement.** There is no `;` pair separator,

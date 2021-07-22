@@ -145,6 +145,36 @@ test('unknown usage is refused with exit 2 and nothing on stdout', async () => {
   }
 })
 
+test('an empty fixture is incomplete with exit 2, never a pass on zero evidence', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'url-state-contract-checker-'))
+  try {
+    for (const [name, body] of [['array.json', '[]'], ['object.json', '{ "urls": [] }']]) {
+      const fixture = join(directory, name)
+      await writeFile(fixture, body, 'utf8')
+      const result = await cli(['--contract', 'examples/contract.json', '--urls', fixture, '--json'])
+      assert.equal(result.code, 2, `empty fixture ${name} is not a pass`)
+      const report = JSON.parse(result.stdout)
+      assert.equal(report.status, 'incomplete')
+      assert.equal(report.summary.checked, 0)
+      assert.equal(report.findings.length, 1)
+      assert.equal(report.findings[0].ruleId, 'fixture-empty')
+      assert.equal(report.findings[0].location.file, name)
+    }
+
+    const combined = join(directory, 'array.json')
+    const withInline = await cli([
+      '--contract', 'examples/contract.json',
+      '--urls', combined,
+      '--url', '/catalog/tools/search?q=drill',
+      '--json'
+    ])
+    assert.equal(withInline.code, 0, 'an empty file plus an inline URL still has evidence')
+    assert.equal(JSON.parse(withInline.stdout).summary.checked, 1)
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
 test('a fixture that is not a URL list is incomplete rather than empty-pass', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'url-state-contract-checker-'))
   try {

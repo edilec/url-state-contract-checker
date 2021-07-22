@@ -42,6 +42,7 @@ export const SCHEMA_VERSION = '1'
 // its input, so the report is "incomplete" and the CLI exits 2 - never 0.
 export const INCOMPLETE_RULES = Object.freeze([
   'contract-invalid',
+  'fixture-empty',
   'fixture-invalid',
   'input-limit-exceeded',
   'input-unreadable',
@@ -144,6 +145,18 @@ function normalizeFixture(fixture, file, collected) {
     })
     return null
   }
+  // Zero evidence is never a pass: a fixture with no URLs would otherwise
+  // report green having checked nothing at all.
+  if (entries.length === 0) {
+    emit(collected, -1, file, {
+      ruleId: 'fixture-empty',
+      severity: 'error',
+      message: 'fixture holds no URLs, so nothing was checked',
+      pointer: '/urls',
+      suggestion: 'point the fixture at the URLs to check, or pass a URL directly'
+    })
+    return null
+  }
   const normalized = []
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index]
@@ -170,7 +183,9 @@ function normalizeFixture(fixture, file, collected) {
  * Check every URL in a fixture against a contract.
  *
  * Never throws for bad input: a contract or fixture it cannot use produces a
- * report with status "incomplete". Options:
+ * report with status "incomplete". A fixture holding no URLs is one of those
+ * cases: it reports "fixture-empty" rather than passing on zero evidence.
+ * Options:
  *   sourceFile      label used for location.file; must be input-relative
  *   timeoutMs       wall budget across all URLs (default LIMITS.defaultTimeoutMs)
  *   clock           injected monotonic millisecond reader, for determinism

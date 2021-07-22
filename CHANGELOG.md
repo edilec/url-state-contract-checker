@@ -25,10 +25,17 @@ breaking change and is recorded here.
   emits a report-contract v1 envelope.
 - CLI with `--contract`, `--urls`, `--url`, `--timeout-ms`, `--json` and
   `--help`. The JSON report goes to stdout alone; diagnostics go to stderr.
-- Thirty stable rule identifiers, documented in `docs/url-state-contract.md`.
+- Thirty-one stable rule identifiers, documented in
+  `docs/url-state-contract.md`.
 - Declared byte, entry, key, value, depth and time limits. Exceeding one is a
   named finding and an `incomplete` report, never a silent truncation.
 - Clean and deliberately broken example fixtures, and tests covering the public
   API and the real CLI entry point.
 
+### Fixed
+
+- A fixture holding no URLs no longer reports `pass` with `checked: 0` and exit
+  `0`. Both `[]` and `{ "urls": [] }` now emit the new `fixture-empty` rule and
+  an `incomplete` report with exit `2`, so a run that checked nothing cannot be
+  mistaken for a green one.
 No release has been published.

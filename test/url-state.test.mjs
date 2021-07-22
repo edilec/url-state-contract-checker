@@ -285,6 +285,19 @@ test('checkUrls reports an unusable fixture as incomplete', () => {
   assert.equal(checkUrls(contract, [{ nope: true }]).status, 'incomplete')
 })
 
+test('checkUrls refuses to pass a fixture holding no URLs', () => {
+  const contract = structuredClone(BASE)
+  for (const fixture of [[], { urls: [] }]) {
+    const report = checkUrls(contract, fixture, { sourceFile: 'urls.json' })
+    assert.equal(report.status, 'incomplete')
+    assert.equal(exitCodeFor(report), 2)
+    assert.equal(report.summary.checked, 0)
+    assert.deepEqual(rules(report.findings), ['fixture-empty'])
+    assert.equal(report.findings[0].location.file, 'urls.json')
+    assert.equal(report.findings[0].location.pointer, '/urls')
+  }
+})
+
 test('declared bounds produce an explicit finding, never a silent truncation', () => {
   const contract = structuredClone(BASE)
   const long = `/catalog/tools/search?q=${'x'.repeat(LIMITS.maxUrlLength)}`

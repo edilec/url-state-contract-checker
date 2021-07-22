@@ -93,6 +93,7 @@ in the changelog.
 | ruleId | Severity | Meaning |
 | --- | --- | --- |
 | `contract-invalid` | error | The contract could not be normalized. Status `incomplete`. |
+| `fixture-empty` | error | The fixture holds no URLs at all, so nothing was checked. Status `incomplete`. |
 | `fixture-invalid` | error | The fixture is not a URL list, or an entry is not a URL. Status `incomplete`. |
 | `input-unreadable` | error | A file could not be read or was not valid JSON. Status `incomplete`. |
 | `input-limit-exceeded` | error | A key, value or path exceeded a tool limit. Status `incomplete`. |
@@ -123,9 +124,12 @@ in the changelog.
 | `default-applied` | info | A declared default supplied a value for an absent key. |
 | `round-trip-mismatch` | error | `parse -> serialize -> parse` did not reproduce the same values. |
 
-`status` is `incomplete` whenever any finding is one of the eight rules marked
+`status` is `incomplete` whenever any finding is one of the nine rules marked
 `Status incomplete` above, `fail` when any other error is present, and `pass`
-only when the tool evaluated every URL and none failed.
+only when the tool evaluated at least one URL and none failed. A fixture with
+no URLs in it is `fixture-empty` and `incomplete`: a run that checked nothing
+is never reported as a pass, because it is an absence of evidence rather than
+evidence of conformance.
 
 ## Parse and serialize rules
 

@@ -35,10 +35,10 @@ Streams:
   stderr  the human summary and any usage diagnostics
 
 Exit codes:
-  0  every URL satisfied the contract
+  0  at least one URL was checked and every one satisfied the contract
   1  the contract was evaluated and at least one URL failed it
-  2  invalid usage or contract, unreadable input, or a limit was exceeded
-     (status "incomplete" - never reported as a pass)
+  2  invalid usage or contract, unreadable input, an empty fixture, or a
+     limit was exceeded (status "incomplete" - never reported as a pass)
 `
 
 function parseArguments(argv) {
