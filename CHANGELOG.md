@@ -38,4 +38,9 @@ breaking change and is recorded here.
   `0`. Both `[]` and `{ "urls": [] }` now emit the new `fixture-empty` rule and
   an `incomplete` report with exit `2`, so a run that checked nothing cannot be
   mistaken for a green one.
+- A contract that could not be read or parsed is now attributed to the contract
+  file in `location.file`. It previously named the `--urls` fixture, or the
+  literal `inline`, pointing consumers that group findings by file at a
+  perfectly healthy input.
+
 No release has been published.

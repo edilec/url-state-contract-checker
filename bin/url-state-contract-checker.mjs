@@ -81,14 +81,29 @@ function inputLabel(path) {
   return relative.split(sep).join('/')
 }
 
+// A load failure belongs to the file that actually failed, not to whichever
+// input happened to be labelled first: a consumer grouping findings by
+// location.file would otherwise annotate a perfectly healthy file.
+function blameFile(error, path) {
+  if (error instanceof ContractError) error.file = inputLabel(path)
+  return error
+}
+
 async function loadJson(path, label) {
   let text
   try {
     text = await readFile(resolve(path), 'utf8')
   } catch (error) {
-    throw new ContractError([`could not read ${label} at ${basename(path)}: ${error.code ?? error.message}`])
+    throw blameFile(
+      new ContractError([`could not read ${label} at ${basename(path)}: ${error.code ?? error.message}`]),
+      path
+    )
   }
-  return parseBoundedJson(text, label)
+  try {
+    return parseBoundedJson(text, label)
+  } catch (error) {
+    throw blameFile(error, path)
+  }
 }
 
 async function main(argv) {
@@ -127,7 +142,7 @@ async function main(argv) {
     }
   } catch (error) {
     if (!(error instanceof ContractError)) throw error
-    report = unreadableReport(error.problems.join('; '), file)
+    report = unreadableReport(error.problems.join('; '), error.file ?? file)
   }
 
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`)

@@ -175,6 +175,50 @@ test('an empty fixture is incomplete with exit 2, never a pass on zero evidence'
   }
 })
 
+test('a load failure names the file that failed, not the other input', async () => {
+  const missingContract = await cli([
+    '--contract', 'examples/nope-contract.json',
+    '--urls', 'examples/urls.clean.json',
+    '--json'
+  ])
+  assert.equal(missingContract.code, 2)
+  const first = JSON.parse(missingContract.stdout).findings[0]
+  assert.equal(first.ruleId, 'input-unreadable')
+  assert.match(first.message, /could not read contract/)
+  assert.equal(first.location.file, 'examples/nope-contract.json')
+
+  const inlineUrl = await cli(['--contract', 'examples/nope-contract.json', '--url', '/a', '--json'])
+  assert.equal(inlineUrl.code, 2)
+  assert.equal(JSON.parse(inlineUrl.stdout).findings[0].location.file, 'examples/nope-contract.json')
+
+  const missingFixture = await cli([
+    '--contract', 'examples/contract.json',
+    '--urls', 'examples/nope-fixture.json',
+    '--json'
+  ])
+  assert.equal(missingFixture.code, 2)
+  const second = JSON.parse(missingFixture.stdout).findings[0]
+  assert.match(second.message, /could not read fixture/)
+  assert.equal(second.location.file, 'examples/nope-fixture.json')
+
+  const directory = await mkdtemp(join(tmpdir(), 'url-state-contract-checker-'))
+  try {
+    const malformed = join(directory, 'malformed-contract.json')
+    await writeFile(malformed, '{ not json', 'utf8')
+    const result = await cli([
+      '--contract', malformed,
+      '--urls', 'examples/urls.clean.json',
+      '--json'
+    ])
+    assert.equal(result.code, 2)
+    const finding = JSON.parse(result.stdout).findings[0]
+    assert.equal(finding.ruleId, 'input-unreadable')
+    assert.equal(finding.location.file, 'malformed-contract.json')
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
 test('a fixture that is not a URL list is incomplete rather than empty-pass', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'url-state-contract-checker-'))
   try {

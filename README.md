@@ -108,6 +108,8 @@ parser. The human summary and every usage diagnostic go to stderr.
 
 `roundTrips` counts URLs for which `parse -> serialize -> parse` reproduced the
 same values, both with declared defaults omitted and with them written out.
+`location.file` names the input a finding belongs to: for a file that could not
+be read or parsed, that is the file which actually failed, not the other input.
 
 ### Library
 

@@ -207,7 +207,9 @@ Running the tool twice over identical inputs produces byte-identical stdout.
   reports `time-limit-exceeded` rather than quietly shortening the run.
 - No filesystem enumeration, hash iteration order or random source is used.
 - `location.file` is the input path as given, relative; an absolute path is
-  reduced to its basename so a report does not depend on the host layout.
+  reduced to its basename so a report does not depend on the host layout. A
+  finding names the input it belongs to, so an input that could not be read or
+  parsed is attributed to that file and never to the other input.
 
 One caveat inherited from JSON: declaration order for `query` and `hash.params`
 is JavaScript object key order, which places integer-like key names such as
