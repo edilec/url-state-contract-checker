@@ -142,6 +142,11 @@ Evidence that could not be read is never reported as a pass. An unreadable
 fixture exits `2`, not `0`, and so does a fixture that holds no URLs: `pass`
 requires that at least one URL was checked and none failed.
 
+A file that will not parse is named by position, line and column, never by
+quoting it back — V8's own parse error embeds the document it choked on, so a
+contract or fixture short enough to be only a credential would otherwise reach
+both streams in full.
+
 ## Limits and non-goals
 
 What this tool **cannot** conclude:

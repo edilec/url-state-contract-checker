@@ -38,6 +38,14 @@ breaking change and is recorded here.
   `0`. Both `[]` and `{ "urls": [] }` now emit the new `fixture-empty` rule and
   an `incomplete` report with exit `2`, so a run that checked nothing cannot be
   mistaken for a green one.
+- A contract or fixture that fails to parse is no longer quoted back. V8 embeds
+  the input in one of its two parse-error shapes (`Unexpected token 'A',
+  "AKIA..." is not valid JSON`), and redaction did not remove it: the quoted
+  copy carries no control characters and sits at the front of the message, well
+  inside the 80-character cap. A file short enough to be only a credential was
+  therefore published twice -- in the JSON report on stdout and in the human
+  summary on stderr. `parseFailureDetail` keeps the position, line and column
+  and drops the quoted document.
 - A contract that could not be read or parsed is now attributed to the contract
   file in `location.file`. It previously named the `--urls` fixture, or the
   literal `inline`, pointing consumers that group findings by file at a

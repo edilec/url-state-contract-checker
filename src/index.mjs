@@ -14,6 +14,7 @@ import {
   UrlStateError,
   decodeComponent,
   encodeComponent,
+  parseFailureDetail,
   parseUrlState,
   serializeUrlState,
   splitUrl,
@@ -29,6 +30,7 @@ export {
   encodeComponent,
   formatValue,
   normalizeContract,
+  parseFailureDetail,
   parseUrlState,
   serializeUrlState,
   splitUrl,
@@ -306,7 +308,7 @@ export function parseBoundedJson(text, label) {
   try {
     value = JSON.parse(text)
   } catch (error) {
-    throw new ContractError([`${label} is not valid JSON: ${error.message}`])
+    throw new ContractError([`${label} is not valid JSON: ${parseFailureDetail(error)}`])
   }
   assertJsonDepth(value, LIMITS.maxJsonDepth, label)
   return value

@@ -62,6 +62,34 @@ export function redactEvidence(raw) {
   return characters.join('')
 }
 
+// Say why a document would not parse, without repeating any of it.
+//
+// V8 reports a parse failure two ways, and one of them quotes the input:
+// `Unexpected token 'A', "AKIAIOSFODNN7EXAMPLE" is not valid JSON`, or a
+// ten-character prefix followed by `"..."`. A contract or fixture short enough
+// to be only a credential is therefore reproduced in full by its own error
+// message -- in the report on stdout and in the human summary on stderr, on
+// exactly the path a malformed or hostile file takes. Redacting the message
+// does not help: redactEvidence escapes control characters and cuts from the
+// end, while the quoted copy carries no controls and sits at the front, well
+// inside the length it allows.
+//
+// The position, line and column say where parsing stopped without saying what
+// was there, which is all a reader needs, and V8 writes them itself with no
+// input in them. V8 omits the position from the quoting form, so that case
+// names the offending token alone rather than inventing a location for it;
+// that token is one character of untrusted input, so it is redacted like any
+// other untrusted string.
+export function parseFailureDetail(error) {
+  const message = String(error?.message ?? 'could not be parsed')
+  const position = /at position \d+(?: \(line \d+ column \d+\))?/.exec(message)
+  if (position) return message.slice(0, position.index + position[0].length)
+  const token = /^Unexpected token (.+?), ".*?"(?:\.\.\.)? is not valid JSON$/s.exec(message)
+  if (token) return `unexpected token ${redactEvidence(token[1])} in the document`
+  if (/^Unexpected end of JSON input$/.test(message)) return message
+  return 'the document could not be parsed as JSON'
+}
+
 /**
  * Strictly percent-decode one URL component.
  * Returns { ok: true, value } or { ok: false, ruleId, message }.

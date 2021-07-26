@@ -95,7 +95,7 @@ in the changelog.
 | `contract-invalid` | error | The contract could not be normalized. Status `incomplete`. |
 | `fixture-empty` | error | The fixture holds no URLs at all, so nothing was checked. Status `incomplete`. |
 | `fixture-invalid` | error | The fixture is not a URL list, or an entry is not a URL. Status `incomplete`. |
-| `input-unreadable` | error | A file could not be read or was not valid JSON. Status `incomplete`. |
+| `input-unreadable` | error | A file could not be read or was not valid JSON. A parse failure is named by position; the document is not quoted back. Status `incomplete`. |
 | `input-limit-exceeded` | error | A key, value or path exceeded a tool limit. Status `incomplete`. |
 | `url-limit-exceeded` | error | The fixture holds more than `maxUrls` URLs. Status `incomplete`. |
 | `url-too-long` | error | A URL exceeded `maxUrlLength`. Status `incomplete`. |
@@ -222,3 +222,11 @@ but if your keys are numeric strings the serialized order may surprise you.
 control characters, U+2028 and U+2029 rewritten as escape text. Fixture URLs
 are data: nothing read from a URL changes what the tool checks, and no value is
 echoed anywhere it could be read as an instruction.
+
+A file that will not parse is named by position, line and column and is never
+quoted back: `fixture is not valid JSON: Expected ',' or ']' after array
+element in JSON at position 33 (line 1 column 34)`. V8's own parse error embeds
+the document it choked on, so a contract or fixture short enough to be only a
+credential would otherwise be reproduced in full -- in the report on stdout and
+again in the human summary on stderr. Redaction does not cover it: the quoted
+copy carries no control characters and sits at the front of the message.

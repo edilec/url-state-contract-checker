@@ -7,6 +7,8 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 
+import { parseFailureDetail } from '../src/index.mjs'
+
 const run = promisify(execFile)
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const CLI = join(ROOT, 'bin', 'url-state-contract-checker.mjs')
@@ -233,4 +235,110 @@ test('a fixture that is not a URL list is incomplete rather than empty-pass', as
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
+})
+
+/**
+ * A document that will not parse must not be quoted back.
+ *
+ * V8 reports a parse failure two ways and one of them embeds the input:
+ * `Unexpected token 'A', "AKIAIOSFODNN7EXAMPLE" is not valid JSON`, or a
+ * ten-character prefix followed by `"..."`. Both streams carry the message --
+ * the JSON report on stdout and the human summary on stderr -- so a contract
+ * or fixture short enough to be only a credential was published twice by its
+ * own diagnostic. The canary is a published AWS documentation placeholder,
+ * not a live key.
+ */
+const CANARY = 'AKIAIOSFODNN7EXAMPLE'
+
+/** Every prefix down to eight characters, which is below V8's truncation at ten. */
+function assertNoCanary(result) {
+  for (const [name, stream] of [['stdout', result.stdout], ['stderr', result.stderr]]) {
+    for (let length = CANARY.length; length >= 8; length -= 1) {
+      assert.equal(
+        stream.includes(CANARY.slice(0, length)),
+        false,
+        `${name} echoed the first ${length} characters of the unparseable document`
+      )
+    }
+  }
+}
+
+test('an unparseable fixture is reported without echoing its contents', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'url-state-contract-checker-'))
+  try {
+    const fixture = join(directory, 'fixture.json')
+    await writeFile(fixture, CANARY, 'utf8')
+    const result = await cli(['--contract', 'examples/contract.json', '--urls', fixture])
+
+    assert.equal(result.code, 2)
+    assertNoCanary(result)
+    const finding = JSON.parse(result.stdout).findings[0]
+    assert.equal(finding.ruleId, 'input-unreadable')
+    assert.equal(finding.message, "fixture is not valid JSON: unexpected token 'A' in the document")
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test('an unparseable contract is reported without echoing its contents', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'url-state-contract-checker-'))
+  try {
+    const contract = join(directory, 'contract.json')
+    await writeFile(contract, CANARY, 'utf8')
+    const result = await cli(['--contract', contract, '--urls', 'examples/urls.clean.json'])
+
+    assert.equal(result.code, 2)
+    assertNoCanary(result)
+    assert.match(JSON.parse(result.stdout).findings[0].message, /contract is not valid JSON/)
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test('a truncated fixture still reports where parsing stopped', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'url-state-contract-checker-'))
+  try {
+    const fixture = join(directory, 'fixture.json')
+    await writeFile(fixture, `{"urls": ["https://x.example/?token=${CANARY}" `, 'utf8')
+    const result = await cli(['--contract', 'examples/contract.json', '--urls', fixture])
+
+    assert.equal(result.code, 2)
+    assertNoCanary(result)
+    assert.match(
+      JSON.parse(result.stdout).findings[0].message,
+      /at position \d+ \(line \d+ column \d+\)$/,
+      'the position, line and column are the useful half and must survive'
+    )
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test('parseFailureDetail keeps the position and drops the quoted document', () => {
+  const capture = (source) => {
+    try {
+      JSON.parse(source)
+      return null
+    } catch (error) {
+      return error
+    }
+  }
+
+  const quoting = capture(CANARY)
+  assert.equal(quoting.message.includes(CANARY), true, 'V8 no longer quotes the input; this guard needs revisiting')
+  assert.equal(parseFailureDetail(quoting), "unexpected token 'A' in the document")
+
+  // A longer document is quoted as a ten-character prefix, which a check for
+  // the whole value would miss entirely.
+  const truncated = capture('password=hunter2-correct-horse')
+  assert.equal(truncated.message.includes('password=h'), true)
+  assert.equal(parseFailureDetail(truncated), "unexpected token 'p' in the document")
+
+  // The token is one character of untrusted input, so it is redacted.
+  const escape = capture(`${String.fromCharCode(0x1b)}[2J`)
+  assert.equal(parseFailureDetail(escape), "unexpected token '\\u001b' in the document")
+
+  assert.match(parseFailureDetail(capture('{"a": 1, ')), /at position \d+ \(line \d+ column \d+\)$/)
+  assert.equal(parseFailureDetail(capture('')), 'Unexpected end of JSON input')
+  assert.equal(parseFailureDetail(new Error('unrecognised shape')), 'the document could not be parsed as JSON')
 })
