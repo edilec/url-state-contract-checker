@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "lint": "node --check src/contract.mjs && node --check src/url-state.mjs && node --check src/index.mjs && node --check bin/url-state-contract-checker.mjs && node --check test/url-state.test.mjs && node --check test/cli.test.mjs",
+    "lint": "node --check src/contract.mjs && node --check src/url-state.mjs && node --check src/index.mjs && node --check bin/url-state-contract-checker.mjs && node --check test/url-state.test.mjs && node --check test/cli.test.mjs && node --check test/parse-failure.test.mjs",
     "test": "node --test",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/**",
     "example": "node bin/url-state-contract-checker.mjs --contract examples/contract.json --urls examples/urls.clean.json",
