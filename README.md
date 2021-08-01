@@ -110,6 +110,9 @@ parser. The human summary and every usage diagnostic go to stderr.
 same values, both with declared defaults omitted and with them written out.
 `location.file` names the input a finding belongs to: for a file that could not
 be read or parsed, that is the file which actually failed, not the other input.
+Unsafe path characters are never copied into a report label; such a path is
+identified by the fixed logical role `@fixture` or `@contract`, referring to
+the corresponding file named in the command.
 
 ### Library
 

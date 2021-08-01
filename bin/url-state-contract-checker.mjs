@@ -73,19 +73,26 @@ function parseArguments(argv) {
 
 // location.file must stay input-relative: an absolute path on this host would
 // leak the machine layout into a report meant to be compared across machines.
-function inputLabel(path) {
+function inputLabel(path, role = 'fixture') {
   if (path === null) return 'inline'
-  if (isAbsolute(path)) return basename(path)
+  if (isAbsolute(path)) return safeLabel(basename(path), role)
   const relative = normalize(path)
-  if (relative.startsWith(`..${sep}`) || relative === '..') return basename(path)
-  return relative.split(sep).join('/')
+  if (relative.startsWith(`..${sep}`) || relative === '..') return safeLabel(basename(path), role)
+  return safeLabel(relative.split(sep).join('/'), role)
+}
+
+// A fixed role remains precise: one contract and at most one fixture file are
+// named by each invocation. It avoids collisions with a stripped basename.
+function safeLabel(value, role) {
+  return /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u200e\u200f\u202a-\u202e\u2066-\u2069]|\p{Default_Ignorable_Code_Point}/u.test(value)
+    ? `@${role}` : value
 }
 
 // A load failure belongs to the file that actually failed, not to whichever
 // input happened to be labelled first: a consumer grouping findings by
 // location.file would otherwise annotate a perfectly healthy file.
-function blameFile(error, path) {
-  if (error instanceof ContractError) error.file = inputLabel(path)
+function blameFile(error, path, role) {
+  if (error instanceof ContractError) error.file = inputLabel(path, role)
   return error
 }
 
@@ -95,14 +102,14 @@ async function loadJson(path, label) {
     text = await readFile(resolve(path), 'utf8')
   } catch (error) {
     throw blameFile(
-      new ContractError([`could not read ${label} at ${basename(path)}: ${error.code ?? error.message}`]),
-      path
+      new ContractError([`could not read ${label} at ${inputLabel(path, label)}: ${error.code ?? 'unknown error'}`]),
+      path, label
     )
   }
   try {
     return parseBoundedJson(text, label)
   } catch (error) {
-    throw blameFile(error, path)
+    throw blameFile(error, path, label)
   }
 }
 
@@ -119,7 +126,7 @@ async function main(argv) {
     return 0
   }
 
-  const file = inputLabel(options.urls)
+  const file = inputLabel(options.urls, 'fixture')
   let report
   try {
     const contract = await loadJson(options.contract, 'contract')

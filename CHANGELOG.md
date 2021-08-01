@@ -34,6 +34,10 @@ breaking change and is recorded here.
 
 ### Fixed
 
+- Unsafe fixture or contract path characters no longer enter report source
+  labels or read-error messages. A fixed `@fixture` or `@contract` role keeps
+  provenance without copying control, bidi, or invisible filename content.
+
 - A fixture holding no URLs no longer reports `pass` with `checked: 0` and exit
   `0`. Both `[]` and `{ "urls": [] }` now emit the new `fixture-empty` rule and
   an `incomplete` report with exit `2`, so a run that checked nothing cannot be

@@ -207,9 +207,12 @@ Running the tool twice over identical inputs produces byte-identical stdout.
   reports `time-limit-exceeded` rather than quietly shortening the run.
 - No filesystem enumeration, hash iteration order or random source is used.
 - `location.file` is the input path as given, relative; an absolute path is
-  reduced to its basename so a report does not depend on the host layout. A
-  finding names the input it belongs to, so an input that could not be read or
-  parsed is attributed to that file and never to the other input.
+  reduced to its basename so a report does not depend on the host layout.
+  If that label contains a control, bidi, line separator, or default-ignorable
+  character, it becomes the fixed logical role `@fixture` or `@contract`.
+  These roles unambiguously identify the single file of each kind named at
+  invocation without exposing a raw path or colliding with a stripped label.
+  An unreadable input is attributed to the role/path that actually failed.
 
 One caveat inherited from JSON: declaration order for `query` and `hash.params`
 is JavaScript object key order, which places integer-like key names such as

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -219,6 +219,41 @@ test('a load failure names the file that failed, not the other input', async () 
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
+})
+
+test('unsafe fixture basenames use unambiguous role provenance without raw controls', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'url-state-label-'))
+  try {
+    const body = await readFile(join(ROOT, 'examples/urls.broken.json'))
+    const safe = join(directory, 'badfixture.json')
+    await writeFile(safe, body)
+    const safeRun = await cli(['--contract', 'examples/contract.json', '--urls', safe, '--json'])
+    assert.equal(safeRun.code, 1)
+    assert.equal(JSON.parse(safeRun.stdout).findings[0].location.file, 'badfixture.json')
+    for (const name of ['bad\u2028fixture.json', 'bad\u2029fixture.json', 'bad\u0001fixture.json', 'bad\u0085fixture.json', 'bad\u202efixture.json', '\u200e']) {
+      const fixture = join(directory, name)
+      await writeFile(fixture, body)
+      const run = await cli(['--contract', 'examples/contract.json', '--urls', fixture, '--json'])
+      assert.equal(run.code, 1)
+      const report = JSON.parse(run.stdout)
+      assert.equal(report.status, 'fail')
+      assert.ok(report.findings.length > 0)
+      assert.ok(report.findings.every(finding => finding.location.file === '@fixture'))
+      assert.equal(run.stdout.includes(name), false)
+    }
+  } finally { await rm(directory, { recursive: true, force: true }) }
+})
+
+test('unsafe contract basename is attributed to the contract role even on read failure', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'url-state-label-'))
+  try {
+    const contract = join(directory, 'bad\u2028contract.json')
+    const result = await cli(['--contract', contract, '--url', '/a', '--json'])
+    assert.equal(result.code, 2)
+    const finding = JSON.parse(result.stdout).findings[0]
+    assert.equal(finding.location.file, '@contract')
+    assert.equal(result.stdout.includes('bad\u2028contract'), false)
+  } finally { await rm(directory, { recursive: true, force: true }) }
 })
 
 test('a fixture that is not a URL list is incomplete rather than empty-pass', async () => {
