@@ -1,0 +1,10 @@
+{
+  "urls": [
+    { "id": "minimal", "url": "/catalog/tools/search?q=torque+wrench" },
+    { "id": "repeatable-tags", "url": "/catalog/cable/search?q=cat6&tag=shielded&tag=outdoor" },
+    { "id": "explicit-values", "url": "/catalog/fasteners/search?q=m8&page=3&sort=price&inStock=true" },
+    { "id": "percent-encoded", "url": "/catalog/tools/search?q=%C3%89lectrique%20%26%20plus" },
+    { "id": "absolute-with-hash", "url": "https://example.test/catalog/tools/search?q=drill#panel=filters&row=12" },
+    { "id": "kept-unknown-hash-key", "url": "/catalog/tools/search?q=drill#panel=compare&scroll=240" }
+  ]
+}
