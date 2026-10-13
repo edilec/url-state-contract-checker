@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The project uses
 Rule identifiers are part of the public contract. Renaming or removing one is a
 breaking change and is recorded here.
 
-## Unreleased
+## 0.1.0 — 2026-10-14
 
 ### Added
 
@@ -55,4 +55,4 @@ breaking change and is recorded here.
   literal `inline`, pointing consumers that group findings by file at a
   perfectly healthy input.
 
-No release has been published.
+GitHub source release v0.1.0 — 2026-10-14.
